@@ -9,7 +9,7 @@ import (
 
 	"github.com/pkg/errors"
 
-	"github.com/tendermint/tendermint/crypto/tmhash"
+	"github.com/kava-labs/tendermint/crypto/tmhash"
 	dbm "github.com/tendermint/tm-db"
 )
 
