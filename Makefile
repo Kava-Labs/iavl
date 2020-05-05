@@ -7,7 +7,7 @@ PDFFLAGS := -pdf --nodefraction=0.1
 
 CMDFLAGS := -ldflags -X TENDERMINT_IAVL_COLORS_ON=on 
 
-LDFLAGS := -ldflags "-X github.com/tendermint/iavl.Version=$(VERSION) -X github.com/tendermint/iavl.Commit=$(COMMIT) -X github.com/tendermint/iavl.Branch=$(BRANCH)"
+LDFLAGS := -ldflags "-X github.com/kava-labs/iavl.Version=$(VERSION) -X github.com/kava-labs/iavl.Commit=$(COMMIT) -X github.com/kava-labs/iavl.Branch=$(BRANCH)"
 
 all: lint test install
 

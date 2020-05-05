@@ -5,18 +5,18 @@ cd benchmarks && \
 		go test -bench=BenchmarkMemKeySizes .
 goos: darwin
 goarch: amd64
-pkg: github.com/tendermint/iavl/benchmarks
+pkg: github.com/kava-labs/iavl/benchmarks
 BenchmarkRandomBytes/random-4-8         	30000000	        50.1 ns/op
 BenchmarkRandomBytes/random-16-8        	20000000	        77.4 ns/op
 BenchmarkRandomBytes/random-32-8        	20000000	       110 ns/op
 BenchmarkRandomBytes/random-100-8       	 5000000	       261 ns/op
 BenchmarkRandomBytes/random-1000-8      	 1000000	      2125 ns/op
 PASS
-ok  	github.com/tendermint/iavl/benchmarks	9.239s
+ok  	github.com/kava-labs/iavl/benchmarks	9.239s
 Init Tree took 0.55 MB
 goos: darwin
 goarch: amd64
-pkg: github.com/tendermint/iavl/benchmarks
+pkg: github.com/kava-labs/iavl/benchmarks
 BenchmarkSmall/memdb-1-0-1000-100-4-10/query-miss-8         	 1000000	      2531 ns/op
 BenchmarkSmall/memdb-1-0-1000-100-4-10/query-hits-8         	  500000	      3429 ns/op
 BenchmarkSmall/memdb-1-0-1000-100-4-10/update-8             	   10000	    116557 ns/op
@@ -77,11 +77,11 @@ BenchmarkSmall/goleveldb-10000-100-1000-100-4-10/query-hits-8         	  500000	
 BenchmarkSmall/goleveldb-10000-100-1000-100-4-10/update-8             	   10000	    107483 ns/op
 BenchmarkSmall/goleveldb-10000-100-1000-100-4-10/block-8              	      50	  40069720 ns/op
 PASS
-ok  	github.com/tendermint/iavl/benchmarks	100.688s
+ok  	github.com/kava-labs/iavl/benchmarks	100.688s
 Init Tree took 48.86 MB
 goos: darwin
 goarch: amd64
-pkg: github.com/tendermint/iavl/benchmarks
+pkg: github.com/kava-labs/iavl/benchmarks
 BenchmarkMedium/memdb-1-0-100000-100-16-40/query-miss-8         	  200000	      6281 ns/op
 BenchmarkMedium/memdb-1-0-100000-100-16-40/query-hits-8         	  200000	      7490 ns/op
 BenchmarkMedium/memdb-1-0-100000-100-16-40/update-8             	    5000	    589147 ns/op
@@ -142,6 +142,6 @@ BenchmarkMedium/goleveldb-10000-100-100000-100-16-40/query-hits-8         	  100
 BenchmarkMedium/goleveldb-10000-100-100000-100-16-40/update-8             	    2000	    734238 ns/op
 BenchmarkMedium/goleveldb-10000-100-100000-100-16-40/block-8              	      20	  72135954 ns/op
 PASS
-ok  	github.com/tendermint/iavl/benchmarks	124.410s
+ok  	github.com/kava-labs/iavl/benchmarks	124.410s
 PASS
-ok  	github.com/tendermint/iavl/benchmarks	0.015s
+ok  	github.com/kava-labs/iavl/benchmarks	0.015s

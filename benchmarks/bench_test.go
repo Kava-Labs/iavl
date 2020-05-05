@@ -10,7 +10,7 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/tendermint/iavl"
+	"github.com/kava-labs/iavl"
 	db "github.com/tendermint/tm-db"
 )
 

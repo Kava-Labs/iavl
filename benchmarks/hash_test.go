@@ -7,7 +7,7 @@ import (
 	"hash"
 	"testing"
 
-	"github.com/tendermint/iavl"
+	"github.com/kava-labs/iavl"
 
 	_ "crypto/sha256"
 
