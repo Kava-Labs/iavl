@@ -10,7 +10,7 @@ import (
 	"github.com/pkg/errors"
 
 	"github.com/kava-labs/tendermint/crypto/tmhash"
-	dbm "github.com/tendermint/tm-db"
+	dbm "github.com/kava-labs/tm-db"
 )
 
 const (

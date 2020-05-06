@@ -10,7 +10,7 @@ import (
 	"strings"
 
 	"github.com/kava-labs/iavl"
-	dbm "github.com/tendermint/tm-db"
+	dbm "github.com/kava-labs/tm-db"
 )
 
 // TODO: make this configurable?

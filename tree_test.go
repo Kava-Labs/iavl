@@ -14,7 +14,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	cmn "github.com/kava-labs/iavl/common"
-	db "github.com/tendermint/tm-db"
+	db "github.com/kava-labs/tm-db"
 )
 
 var testLevelDB bool
