@@ -191,8 +191,6 @@ github.com/julienschmidt/httprouter v1.2.0/go.mod h1:SYymIcj16QtmaHHD7aYtjjsJG7V
 github.com/kava-labs/tendermint v0.33.3-stable h1:ERQqWNeHfmMRnIRj0XnKZkeRgWncTM2enFqzpP6V8wY=
 github.com/kava-labs/tendermint v0.33.3-stable/go.mod h1:6nrWzCo53nPWmxB0MgUUKEocIfqSf6GJ31+JgUQiBPs=
 github.com/kava-labs/tendermint v0.33.3/go.mod h1:25DqB7YvV1tN3tHsjWoc2vFtlwICfrub9XO6UBO+4xk=
-github.com/kava-labs/tendermint v0.33.4-0.20200506042050-c611c5308a53 h1:6LIw0ldS4hstj48Bd+VA55/hpOgrRNP2ERk55F0+09g=
-github.com/kava-labs/tendermint v0.33.4-0.20200506042050-c611c5308a53/go.mod h1:TzVOAQgjiXTbZ5l1sa9ZbGgIavAOcf48X2xMp8FWMig=
 github.com/kava-labs/tm-db v0.4.1-stable h1:yGn7r+cd58oSQ7DyVXlckiFOImEMOkqfxQSAjfnEfrk=
 github.com/kava-labs/tm-db v0.4.1-stable/go.mod h1:dRComvpd8Xj0cJun86vy2bc1i5b8gm15dQlRm1+BiMs=
 github.com/kisielk/errcheck v1.1.0/go.mod h1:EZBBE59ingxPouuu3KfxchcWSUPOHkagtvWXihfKN4Q=
