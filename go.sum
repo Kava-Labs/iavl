@@ -188,9 +188,8 @@ github.com/json-iterator/go v1.1.8/go.mod h1:KdQUCv79m/52Kvf8AW2vK1V8akMuk1QjK/u
 github.com/json-iterator/go v1.1.9/go.mod h1:KdQUCv79m/52Kvf8AW2vK1V8akMuk1QjK/uOdHXbAo4=
 github.com/jtolds/gls v4.20.0+incompatible/go.mod h1:QJZ7F/aHp+rZTRtaJ1ow/lLfFfVYBRgL+9YlvaHOwJU=
 github.com/julienschmidt/httprouter v1.2.0/go.mod h1:SYymIcj16QtmaHHD7aYtjjsJG7VTCxuUUipMqKk8s4w=
-github.com/kava-labs/tendermint v0.33.3-stable h1:ERQqWNeHfmMRnIRj0XnKZkeRgWncTM2enFqzpP6V8wY=
-github.com/kava-labs/tendermint v0.33.3-stable/go.mod h1:6nrWzCo53nPWmxB0MgUUKEocIfqSf6GJ31+JgUQiBPs=
-github.com/kava-labs/tendermint v0.33.3/go.mod h1:25DqB7YvV1tN3tHsjWoc2vFtlwICfrub9XO6UBO+4xk=
+github.com/kava-labs/tendermint v0.33.4-0.20200520050724-b26f703498c9 h1:p0K7SOftAURcqpm+sTZ+d8zG2QT36aGf03DmGzHRMLc=
+github.com/kava-labs/tendermint v0.33.4-0.20200520050724-b26f703498c9/go.mod h1:bQH35Apltdjh3SfnBgqNsrfWpEkP7QIO71JCM9VjXfs=
 github.com/kava-labs/tm-db v0.4.1-stable h1:yGn7r+cd58oSQ7DyVXlckiFOImEMOkqfxQSAjfnEfrk=
 github.com/kava-labs/tm-db v0.4.1-stable/go.mod h1:dRComvpd8Xj0cJun86vy2bc1i5b8gm15dQlRm1+BiMs=
 github.com/kisielk/errcheck v1.1.0/go.mod h1:EZBBE59ingxPouuu3KfxchcWSUPOHkagtvWXihfKN4Q=
