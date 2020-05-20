@@ -3,7 +3,7 @@ module github.com/kava-labs/iavl
 go 1.13
 
 require (
-	github.com/kava-labs/tendermint v0.33.4-0.20200520164040-22a423c4e84a
+	github.com/kava-labs/tendermint v0.33.4-0.20200520210209-5647477ed5f1
 	github.com/kava-labs/tm-db v0.4.1-stable
 	github.com/pkg/errors v0.9.1
 	github.com/stretchr/testify v1.5.1
@@ -13,4 +13,4 @@ require (
 
 replace github.com/tendermint/tm-db => github.com/kava-labs/tm-db v0.4.1-stable
 
-replace github.com/kava-labs/tendermint => github.com/kava-labs/tendermint v0.33.4-0.20200520164040-22a423c4e84a
+replace github.com/kava-labs/tendermint => github.com/kava-labs/tendermint v0.33.4-0.20200520210209-5647477ed5f1
