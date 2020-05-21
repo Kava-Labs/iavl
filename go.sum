@@ -172,10 +172,10 @@ github.com/json-iterator/go v1.1.8/go.mod h1:KdQUCv79m/52Kvf8AW2vK1V8akMuk1QjK/u
 github.com/json-iterator/go v1.1.9/go.mod h1:KdQUCv79m/52Kvf8AW2vK1V8akMuk1QjK/uOdHXbAo4=
 github.com/jtolds/gls v4.20.0+incompatible/go.mod h1:QJZ7F/aHp+rZTRtaJ1ow/lLfFfVYBRgL+9YlvaHOwJU=
 github.com/julienschmidt/httprouter v1.2.0/go.mod h1:SYymIcj16QtmaHHD7aYtjjsJG7VTCxuUUipMqKk8s4w=
-github.com/kava-labs/tendermint v0.33.3-pinned h1:RjXqX6R9ZjZkYSijjXp7uzs8I+QK/CM7TZ2IdSVRXMs=
-github.com/kava-labs/tendermint v0.33.3-pinned/go.mod h1:RSX+OI/AWb5fEJTAQESP5iK4KI78i6sRMH1YRCpuS2I=
-github.com/kava-labs/tm-db v0.4.1-kava h1:kKcRzb0LbdkX6iS1ziyq17r6BqZSx3MHLoiw6sqbIGM=
-github.com/kava-labs/tm-db v0.4.1-kava/go.mod h1:dRComvpd8Xj0cJun86vy2bc1i5b8gm15dQlRm1+BiMs=
+github.com/kava-labs/tendermint v0.33.3-release h1:5VGpieDxAU7vu52EtlUOpO7+Lz0pASLAR09lqE67kOQ=
+github.com/kava-labs/tendermint v0.33.3-release/go.mod h1:+YBcrznWqtj6NkBMll7Dayzxz5JiDT6gG2UKajX6Kc8=
+github.com/kava-labs/tm-db v0.4.1-release h1:M2QbX8nBl3iK0MoPd7o8FKusY/AaJVhVp7jLTdJ14OM=
+github.com/kava-labs/tm-db v0.4.1-release/go.mod h1:dRComvpd8Xj0cJun86vy2bc1i5b8gm15dQlRm1+BiMs=
 github.com/kisielk/errcheck v1.1.0/go.mod h1:EZBBE59ingxPouuu3KfxchcWSUPOHkagtvWXihfKN4Q=
 github.com/kisielk/errcheck v1.2.0/go.mod h1:/BMXB+zMLi60iA8Vv6Ksmxu/1UDYcXs4uQLJ+jE2L00=
 github.com/kisielk/gotool v1.0.0/go.mod h1:XhKaO+MFFWcvkIS/tQcRk01m1F5IRFswLeQ+oQHNcck=
