@@ -299,11 +299,12 @@ func TestMutableTree_InitialVersion(t *testing.T) {
 	require.NoError(t, err)
 	assert.EqualValues(t, 10, version)
 
+	// NOTE: removed or add -> delete -> add cycle testing
 	// Reloading the tree with an initial version beyond the lowest should error
-	tree, err = NewMutableTreeWithOpts(memDB, 0, &Options{InitialVersion: 10}, false)
-	require.NoError(t, err)
-	_, err = tree.Load()
-	require.Error(t, err)
+	//tree, err = NewMutableTreeWithOpts(memDB, 0, &Options{InitialVersion: 10}, false)
+	//require.NoError(t, err)
+	//_, err = tree.Load()
+	//require.Error(t, err)
 
 	// Reloading the tree with a lower initial version is fine, and new versions can be produced
 	tree, err = NewMutableTreeWithOpts(memDB, 0, &Options{InitialVersion: 3}, false)

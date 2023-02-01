@@ -578,10 +578,11 @@ func (tree *MutableTree) LoadVersion(targetVersion int64) (int64, error) {
 			targetVersion, latestVersion)
 	}
 
-	if firstVersion > 0 && firstVersion < int64(tree.ndb.opts.InitialVersion) {
-		return latestVersion, fmt.Errorf("initial version set to %v, but found earlier version %v",
-			tree.ndb.opts.InitialVersion, firstVersion)
-	}
+	// NOTE: remove validation here
+	//if firstVersion > 0 && firstVersion < int64(tree.ndb.opts.InitialVersion) {
+	//	return latestVersion, fmt.Errorf("initial version set to %v, but found earlier version %v",
+	//		tree.ndb.opts.InitialVersion, firstVersion)
+	//}
 
 	t := &ImmutableTree{
 		ndb:                    tree.ndb,
