@@ -204,13 +204,13 @@ func TestIterator_WithDelete_Full_Ascending_Success(t *testing.T) {
 	})
 
 	t.Run("Fast Iterator", func(t *testing.T) {
-		itr := NewFastIterator(config.startIterate, config.endIterate, config.ascending, immutableTree.ndb)
+		itr := NewFastIterator(config.startIterate, config.endIterate, config.ascending, immutableTree.Ndb)
 		require.True(t, itr.Valid())
 		assertIterator(t, itr, sortedMirror, config.ascending)
 	})
 
 	t.Run("Unsaved Fast Iterator", func(t *testing.T) {
-		itr := NewUnsavedFastIterator(config.startIterate, config.endIterate, config.ascending, immutableTree.ndb, tree.unsavedFastNodeAdditions, tree.unsavedFastNodeRemovals)
+		itr := NewUnsavedFastIterator(config.startIterate, config.endIterate, config.ascending, immutableTree.Ndb, tree.unsavedFastNodeAdditions, tree.unsavedFastNodeRemovals)
 		require.True(t, itr.Valid())
 		assertIterator(t, itr, sortedMirror, config.ascending)
 	})

@@ -43,7 +43,7 @@ func newExporter(tree *ImmutableTree) (*Exporter, error) {
 		return nil, fmt.Errorf("tree is nil: %w", ErrNotInitalizedTree)
 	}
 	// CV Prevent crash on incrVersionReaders if tree.ndb == nil
-	if tree.ndb == nil {
+	if tree.Ndb == nil {
 		return nil, fmt.Errorf("tree.ndb is nil: %w", ErrNotInitalizedTree)
 	}
 
@@ -54,7 +54,7 @@ func newExporter(tree *ImmutableTree) (*Exporter, error) {
 		cancel: cancel,
 	}
 
-	tree.ndb.incrVersionReaders(tree.version)
+	tree.Ndb.incrVersionReaders(tree.version)
 	go exporter.export(ctx)
 
 	return exporter, nil
@@ -94,7 +94,7 @@ func (e *Exporter) Close() {
 	for range e.ch { // drain channel
 	}
 	if e.tree != nil {
-		e.tree.ndb.decrVersionReaders(e.tree.version)
+		e.tree.Ndb.decrVersionReaders(e.tree.version)
 	}
 	e.tree = nil
 }

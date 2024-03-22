@@ -469,7 +469,7 @@ func (node *Node) getLeftNode(t *ImmutableTree) (*Node, error) {
 	if node.leftNode != nil {
 		return node.leftNode, nil
 	}
-	leftNode, err := t.ndb.GetNode(node.leftHash)
+	leftNode, err := t.Ndb.GetNode(node.leftHash)
 	if err != nil {
 		return nil, err
 	}
@@ -481,7 +481,7 @@ func (node *Node) getRightNode(t *ImmutableTree) (*Node, error) {
 	if node.rightNode != nil {
 		return node.rightNode, nil
 	}
-	rightNode, err := t.ndb.GetNode(node.rightHash)
+	rightNode, err := t.Ndb.GetNode(node.rightHash)
 	if err != nil {
 		return nil, err
 	}

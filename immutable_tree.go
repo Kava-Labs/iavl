@@ -1,6 +1,8 @@
 package iavl
 
 import (
+	"bytes"
+	"encoding/hex"
 	"fmt"
 	"strings"
 
@@ -15,7 +17,7 @@ import (
 // IAVL which would also be modified.
 type ImmutableTree struct {
 	root                   *Node
-	ndb                    *nodeDB
+	Ndb                    *nodeDB
 	version                int64
 	skipFastStorageUpgrade bool
 }
@@ -28,7 +30,7 @@ func NewImmutableTree(db dbm.DB, cacheSize int, skipFastStorageUpgrade bool) *Im
 	}
 	return &ImmutableTree{
 		// NodeDB-backed Tree.
-		ndb:                    newNodeDB(db, cacheSize, nil),
+		Ndb:                    newNodeDB(db, cacheSize, nil),
 		skipFastStorageUpgrade: skipFastStorageUpgrade,
 	}
 }
@@ -37,7 +39,7 @@ func NewImmutableTree(db dbm.DB, cacheSize int, skipFastStorageUpgrade bool) *Im
 func NewImmutableTreeWithOpts(db dbm.DB, cacheSize int, opts *Options, skipFastStorageUpgrade bool) *ImmutableTree {
 	return &ImmutableTree{
 		// NodeDB-backed Tree.
-		ndb:                    newNodeDB(db, cacheSize, opts),
+		Ndb:                    newNodeDB(db, cacheSize, opts),
 		skipFastStorageUpgrade: skipFastStorageUpgrade,
 	}
 }
@@ -64,21 +66,21 @@ func (t *ImmutableTree) RenderShape(indent string, encoder NodeEncoder) ([]strin
 // NodeEncoder will take an id (hash, or key for leaf nodes), the depth of the node,
 // and whether or not this is a leaf node.
 // It returns the string we wish to print, for iaviwer
-type NodeEncoder func(id []byte, depth int, isLeaf bool) string
+type NodeEncoder func(hash []byte, key []byte, depth int, isLeaf bool) string
 
 // defaultNodeEncoder can encode any node unless the client overrides it
-func defaultNodeEncoder(id []byte, depth int, isLeaf bool) string {
+func defaultNodeEncoder(hash []byte, key []byte, depth int, isLeaf bool) string {
 	prefix := "- "
 	if isLeaf {
 		prefix = "* "
 	}
-	if len(id) == 0 {
+	if len(hash) == 0 {
 		return fmt.Sprintf("%s<nil>", prefix)
 	}
-	return fmt.Sprintf("%s%X", prefix, id)
+	return fmt.Sprintf("%s%X", prefix, hash)
 }
 
-func (t *ImmutableTree) renderNode(node *Node, indent string, depth int, encoder func([]byte, int, bool) string) ([]string, error) {
+func (t *ImmutableTree) renderNode(node *Node, indent string, depth int, encoder func([]byte, []byte, int, bool) string) ([]string, error) {
 	prefix := strings.Repeat(indent, depth)
 	// handle nil
 	if node == nil {
@@ -86,12 +88,12 @@ func (t *ImmutableTree) renderNode(node *Node, indent string, depth int, encoder
 	}
 	// handle leaf
 	if node.isLeaf() {
-		here := fmt.Sprintf("%s%s", prefix, encoder(node.key, depth, true))
+		here := fmt.Sprintf("%s%s", prefix, encoder(node.hash, node.key, depth, true))
 		return []string{here}, nil
 	}
 
 	// recurse on inner node
-	here := fmt.Sprintf("%s%s", prefix, encoder(node.hash, depth, false))
+	here := fmt.Sprintf("%s%s", prefix, encoder(node.hash, node.key, depth, false))
 
 	rightNode, err := node.getRightNode(t)
 	if err != nil {
@@ -113,6 +115,7 @@ func (t *ImmutableTree) renderNode(node *Node, indent string, depth int, encoder
 		return nil, err
 	}
 
+	// Left children, here, right children
 	result = append(result, here)
 	result = append(result, right...)
 	return result, nil
@@ -184,7 +187,7 @@ func (t *ImmutableTree) Get(key []byte) ([]byte, error) {
 	if !t.skipFastStorageUpgrade {
 		// attempt to get a FastNode directly from db/cache.
 		// if call fails, fall back to the original IAVL logic in place.
-		fastNode, err := t.ndb.GetFastNode(key)
+		fastNode, err := t.Ndb.GetFastNode(key)
 		if err != nil {
 			_, result, err := t.root.get(t, key)
 			return result, err
@@ -194,7 +197,7 @@ func (t *ImmutableTree) Get(key []byte) ([]byte, error) {
 			// If the tree is of the latest version and fast node is not in the tree
 			// then the regular node is not in the tree either because fast node
 			// represents live state.
-			if t.version == t.ndb.latestVersion {
+			if t.version == t.Ndb.latestVersion {
 				return nil, nil
 			}
 
@@ -246,30 +249,49 @@ func (t *ImmutableTree) Iterate(fn func(key []byte, value []byte) bool) (bool, e
 
 // Iterator returns an iterator over the immutable tree.
 func (t *ImmutableTree) Iterator(start, end []byte, ascending bool) (dbm.Iterator, error) {
-	if !t.skipFastStorageUpgrade {
-		isFastCacheEnabled, err := t.IsFastCacheEnabled()
-		if err != nil {
-			return nil, err
-		}
 
-		if isFastCacheEnabled {
-			return NewFastIterator(start, end, ascending, t.ndb), nil
-		}
-	}
 	return NewIterator(start, end, ascending, t), nil
 }
 
 // IterateRange makes a callback for all nodes with key between start and end non-inclusive.
 // If either are nil, then it is open on that side (nil, nil is the same as Iterate). The keys and
 // values must not be modified, since they may point to data stored within IAVL.
-func (t *ImmutableTree) IterateRange(start, end []byte, ascending bool, fn func(key []byte, value []byte) bool) (stopped bool) {
+func (t *ImmutableTree) IterateRange(start, end []byte, ascending bool, fn func(key []byte, value []byte, hash []byte, isLeaf bool) bool) (stopped bool) {
 	if t.root == nil {
 		return false
 	}
 	return t.root.traverseInRange(t, start, end, ascending, false, false, func(node *Node) bool {
-		if node.height == 0 {
-			return fn(node.key, node.value)
+		targetHash1, err := hex.DecodeString("C7FC20871082A1A1C32BB5854E0EEDEAFB4DC8F0D018AB8499899DCB871A0EAA")
+		if err != nil {
+			panic(err)
 		}
+
+		targetHash2, err := hex.DecodeString("56F0D956C4DD26A11D6BA8B27B4F006F5D9904F4BBCDD7B5977ED47143FE3E12")
+		if err != nil {
+			panic(err)
+		}
+
+		keysEqual := bytes.Equal(node.key, targetHash1) || bytes.Equal(node.key, targetHash2)
+		hashesEqual := bytes.Equal(node.hash, targetHash1) || bytes.Equal(node.hash, targetHash2)
+
+		if keysEqual || hashesEqual {
+			fmt.Printf("\n\nFOUND %X!\n", node.hash)
+
+			node.traverse(t, true, func(n *Node) bool {
+				fmt.Printf("[isLeaf: %v] Node: %x -> %x\n", n.isLeaf(), n.key, n.value)
+				fmt.Printf("Hash: %x, Version: %d\n", n.hash, n.version)
+				return false
+			})
+
+			fmt.Print("===\n\n")
+		}
+
+		if node.height == 0 {
+			return fn(node.key, node.value, node.hash, true)
+		} else {
+			return fn(node.key, node.value, node.hash, false)
+		}
+
 		return false
 	})
 }
@@ -298,11 +320,11 @@ func (t *ImmutableTree) IsFastCacheEnabled() (bool, error) {
 	if err != nil {
 		return false, err
 	}
-	return isLatestTreeVersion && t.ndb.hasUpgradedToFastStorage(), nil
+	return isLatestTreeVersion && t.Ndb.hasUpgradedToFastStorage(), nil
 }
 
 func (t *ImmutableTree) isLatestTreeVersion() (bool, error) {
-	latestVersion, err := t.ndb.getLatestVersion()
+	latestVersion, err := t.Ndb.getLatestVersion()
 	if err != nil {
 		return false, err
 	}
@@ -314,7 +336,7 @@ func (t *ImmutableTree) isLatestTreeVersion() (bool, error) {
 func (t *ImmutableTree) clone() *ImmutableTree {
 	return &ImmutableTree{
 		root:                   t.root,
-		ndb:                    t.ndb,
+		Ndb:                    t.Ndb,
 		version:                t.version,
 		skipFastStorageUpgrade: t.skipFastStorageUpgrade,
 	}
@@ -335,5 +357,5 @@ func (t *ImmutableTree) nodeSize() int {
 // TraverseStateChanges iterate the range of versions, compare each version to it's predecessor to extract the state changes of it.
 // endVersion is exclusive.
 func (t *ImmutableTree) TraverseStateChanges(startVersion, endVersion int64, fn func(version int64, changeSet *ChangeSet) error) error {
-	return t.ndb.traverseStateChanges(startVersion, endVersion, fn)
+	return t.Ndb.traverseStateChanges(startVersion, endVersion, fn)
 }

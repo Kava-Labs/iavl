@@ -49,7 +49,7 @@ func NewMutableTree(db dbm.DB, cacheSize int, skipFastStorageUpgrade bool) (*Mut
 // NewMutableTreeWithOpts returns a new tree with the specified options.
 func NewMutableTreeWithOpts(db dbm.DB, cacheSize int, opts *Options, skipFastStorageUpgrade bool) (*MutableTree, error) {
 	ndb := newNodeDB(db, cacheSize, opts)
-	head := &ImmutableTree{ndb: ndb, skipFastStorageUpgrade: skipFastStorageUpgrade}
+	head := &ImmutableTree{Ndb: ndb, skipFastStorageUpgrade: skipFastStorageUpgrade}
 
 	return &MutableTree{
 		ImmutableTree:            head,
@@ -206,16 +206,6 @@ func (tree *MutableTree) Iterate(fn func(key []byte, value []byte) bool) (stoppe
 // Iterator returns an iterator over the mutable tree.
 // CONTRACT: no updates are made to the tree while an iterator is active.
 func (tree *MutableTree) Iterator(start, end []byte, ascending bool) (dbm.Iterator, error) {
-	if !tree.skipFastStorageUpgrade {
-		isFastCacheEnabled, err := tree.IsFastCacheEnabled()
-		if err != nil {
-			return nil, err
-		}
-
-		if isFastCacheEnabled {
-			return NewUnsavedFastIterator(start, end, ascending, tree.ndb, tree.unsavedFastNodeAdditions, tree.unsavedFastNodeRemovals), nil
-		}
-	}
 
 	return tree.ImmutableTree.Iterator(start, end, ascending)
 }
@@ -517,7 +507,7 @@ func (tree *MutableTree) LazyLoadVersion(targetVersion int64) (int64, error) {
 	tree.versions[targetVersion] = true
 
 	iTree := &ImmutableTree{
-		ndb:                    tree.ndb,
+		Ndb:                    tree.ndb,
 		version:                targetVersion,
 		skipFastStorageUpgrade: tree.skipFastStorageUpgrade,
 	}
@@ -593,7 +583,7 @@ func (tree *MutableTree) LoadVersion(targetVersion int64) (int64, error) {
 	}
 
 	t := &ImmutableTree{
-		ndb:                    tree.ndb,
+		Ndb:                    tree.ndb,
 		version:                latestVersion,
 		skipFastStorageUpgrade: tree.skipFastStorageUpgrade,
 	}
@@ -778,7 +768,7 @@ func (tree *MutableTree) GetImmutable(version int64) (*ImmutableTree, error) {
 	if len(rootHash) == 0 {
 		tree.versions[version] = true
 		return &ImmutableTree{
-			ndb:                    tree.ndb,
+			Ndb:                    tree.ndb,
 			version:                version,
 			skipFastStorageUpgrade: tree.skipFastStorageUpgrade,
 		}, nil
@@ -791,7 +781,7 @@ func (tree *MutableTree) GetImmutable(version int64) (*ImmutableTree, error) {
 	}
 	return &ImmutableTree{
 		root:                   root,
-		ndb:                    tree.ndb,
+		Ndb:                    tree.ndb,
 		version:                version,
 		skipFastStorageUpgrade: tree.skipFastStorageUpgrade,
 	}, nil
@@ -804,7 +794,7 @@ func (tree *MutableTree) Rollback() {
 		tree.ImmutableTree = tree.lastSaved.clone()
 	} else {
 		tree.ImmutableTree = &ImmutableTree{
-			ndb:                    tree.ndb,
+			Ndb:                    tree.ndb,
 			version:                0,
 			skipFastStorageUpgrade: tree.skipFastStorageUpgrade,
 		}
@@ -1282,4 +1272,8 @@ func (tree *MutableTree) addOrphans(orphans []*Node) error {
 		tree.orphans[unsafeToStr(node.hash)] = node.version
 	}
 	return nil
+}
+
+func (tree *MutableTree) GetNode(hash []byte) (*Node, error) {
+	return tree.ndb.GetNode(hash)
 }
