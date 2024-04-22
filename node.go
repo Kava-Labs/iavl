@@ -179,6 +179,39 @@ func (node *Node) has(t *ImmutableTree, key []byte) (has bool, err error) {
 //
 // The index is the index in the list of leaf nodes sorted lexicographically by key. The leftmost leaf has index 0.
 // It's neighbor has index 1 and so on.
+func (node *Node) getNode(t *ImmutableTree, key []byte) (target *Node, err error) {
+	if node.isLeaf() {
+		switch bytes.Compare(node.key, key) {
+		case -1:
+			return nil, nil
+		case 1:
+			return nil, nil
+		default:
+			return node, nil
+		}
+	}
+
+	if bytes.Compare(key, node.key) < 0 {
+		leftNode, err := node.getLeftNode(t)
+		if err != nil {
+			return nil, err
+		}
+
+		return leftNode.getNode(t, key)
+	}
+
+	rightNode, err := node.getRightNode(t)
+	if err != nil {
+		return nil, err
+	}
+
+	return rightNode.getNode(t, key)
+}
+
+// Get a key under the node.
+//
+// The index is the index in the list of leaf nodes sorted lexicographically by key. The leftmost leaf has index 0.
+// It's neighbor has index 1 and so on.
 func (node *Node) get(t *ImmutableTree, key []byte) (index int64, value []byte, err error) {
 	if node.isLeaf() {
 		switch bytes.Compare(node.key, key) {
