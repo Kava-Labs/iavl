@@ -136,9 +136,9 @@ func (node *Node) FullString() string {
 		hashstr = fmt.Sprintf("%X", node.hash)
 	}
 
-	return fmt.Sprintf("Node{\n\tKey: %s\n\tValue: %s\n\tVersion: %d\n\tHeight: %d\n\tSize: %d\n\tLeftHash: %X\n\tRightHash: %X\n\tPersisted: %t\n\tHash: %s\n}",
-		ColoredBytes(node.key, Green, Blue),
-		ColoredBytes(node.value, Cyan, Blue),
+	return fmt.Sprintf("Node{\n\tKey: %x\n\tValue: %x\n\tVersion: %d\n\tHeight: %d\n\tSize: %d\n\tLeftHash: %X\n\tRightHash: %X\n\tPersisted: %t\n\tHash: %s\n}",
+		node.key,
+		node.value,
 		node.version,
 		node.height,
 		node.size,
