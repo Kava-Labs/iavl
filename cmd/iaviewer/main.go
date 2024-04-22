@@ -117,11 +117,11 @@ func main() {
 			start,
 			end,
 			true,
-			func(key, value, hash []byte, isLeaf bool) bool {
+			func(iterKey, value, hash []byte, isLeaf bool, version int64) bool {
 				if isLeaf {
-					fmt.Printf("[LEAF] Key: %X, Value: %X, Hash: %X\n", key, value, hash)
+					fmt.Printf("[LEAF] Key: %X, Value: %X, Hash: %X, version: %v\n", key, value, hash, version)
 				} else {
-					fmt.Printf("[BRANCH] Key: %X, Value: %X, Hash: %X, \n", key, value, hash)
+					fmt.Printf("[BRANCH] Key: %X, Value: %X, Hash: %X, version: %v\n", key, value, hash, version)
 				}
 
 				// Continue iterating
@@ -303,7 +303,7 @@ func nodeEncoder(hash []byte, key []byte, depth int, isLeaf bool) string {
 		return fmt.Sprintf("%s%s", prefix, parseWeaveKey(key))
 	}
 
-	return fmt.Sprintf("%s%s (key: %s)", prefix, parseWeaveKey(hash), parseWeaveKey(key))
+	return fmt.Sprintf("%s%x (key: %x)", prefix, hash, key)
 }
 
 func PrintVersions(tree *iavl.MutableTree) {

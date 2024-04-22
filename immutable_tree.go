@@ -2,6 +2,7 @@ package iavl
 
 import (
 	"bytes"
+	"crypto/sha256"
 	"encoding/hex"
 	"fmt"
 	"strings"
@@ -256,17 +257,17 @@ func (t *ImmutableTree) Iterator(start, end []byte, ascending bool) (dbm.Iterato
 // IterateRange makes a callback for all nodes with key between start and end non-inclusive.
 // If either are nil, then it is open on that side (nil, nil is the same as Iterate). The keys and
 // values must not be modified, since they may point to data stored within IAVL.
-func (t *ImmutableTree) IterateRange(start, end []byte, ascending bool, fn func(key []byte, value []byte, hash []byte, isLeaf bool) bool) (stopped bool) {
+func (t *ImmutableTree) IterateRange(start, end []byte, ascending bool, fn func(key []byte, value []byte, hash []byte, isLeaf bool, version int64) bool) (stopped bool) {
 	if t.root == nil {
 		return false
 	}
 	return t.root.traverseInRange(t, start, end, ascending, false, false, func(node *Node) bool {
-		targetHash1, err := hex.DecodeString("C7FC20871082A1A1C32BB5854E0EEDEAFB4DC8F0D018AB8499899DCB871A0EAA")
+		targetHash1, err := hex.DecodeString("6d3a638aae80bbe2344084f389f92b6ac7d4cb7b43663689bffb367b143b3cf6")
 		if err != nil {
 			panic(err)
 		}
 
-		targetHash2, err := hex.DecodeString("56F0D956C4DD26A11D6BA8B27B4F006F5D9904F4BBCDD7B5977ED47143FE3E12")
+		targetHash2, err := hex.DecodeString("aff0a799ba45adf1a5c8bd715ef27ea648264008f4be5d9be47c69a2595e627a")
 		if err != nil {
 			panic(err)
 		}
@@ -278,18 +279,30 @@ func (t *ImmutableTree) IterateRange(start, end []byte, ascending bool, fn func(
 			fmt.Printf("\n\nFOUND %X!\n", node.hash)
 
 			node.traverse(t, true, func(n *Node) bool {
-				fmt.Printf("[isLeaf: %v] Node: %x -> %x\n", n.isLeaf(), n.key, n.value)
-				fmt.Printf("Hash: %x, Version: %d\n", n.hash, n.version)
+				var prefix string
+				if n.isLeaf() {
+					prefix = "LEAF"
+				} else {
+					prefix = "BRANCH"
+				}
+
+				fmt.Printf("[%v] Node: %x -> %x\n", prefix, n.key, n.value)
+				fmt.Printf("Hash: %x, Version: %d, Size: %d, Height: %d\n", n.hash, n.version, n.size, n.height)
+				fmt.Printf("ValueHash: %x\n", sha256.Sum256(n.value))
+				fmt.Printf("Left: %x, Right: %x\n", n.leftHash, n.rightHash)
+
+				fmt.Printf("Raw node: %v\n", n)
 				return false
 			})
 
 			fmt.Print("===\n\n")
 		}
 
+		fmt.Printf("Raw node: %+v\n", node)
 		if node.height == 0 {
-			return fn(node.key, node.value, node.hash, true)
+			return fn(node.key, node.value, node.hash, true, node.version)
 		} else {
-			return fn(node.key, node.value, node.hash, false)
+			return fn(node.key, node.value, node.hash, false, node.version)
 		}
 
 		return false
