@@ -128,6 +128,27 @@ func (node *Node) String() string {
 		hashstr)
 }
 
+// FullString returns a string that displays the full contents of the Node in
+// a pretty struct form
+func (node *Node) FullString() string {
+	hashstr := "<no hash>"
+	if len(node.hash) > 0 {
+		hashstr = fmt.Sprintf("%X", node.hash)
+	}
+
+	return fmt.Sprintf("Node{\n\tKey: %s\n\tValue: %s\n\tVersion: %d\n\tHeight: %d\n\tSize: %d\n\tLeftHash: %X\n\tRightHash: %X\n\tPersisted: %t\n\tHash: %s\n}",
+		ColoredBytes(node.key, Green, Blue),
+		ColoredBytes(node.value, Cyan, Blue),
+		node.version,
+		node.height,
+		node.size,
+		node.leftHash,
+		node.rightHash,
+		node.persisted,
+		hashstr,
+	)
+}
+
 // clone creates a shallow copy of a node with its hash set to nil.
 func (node *Node) clone(version int64) (*Node, error) {
 	if node.isLeaf() {
