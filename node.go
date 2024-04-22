@@ -275,14 +275,24 @@ func (node *Node) FullString() string {
 		hashstr = fmt.Sprintf("%X", node.hash)
 	}
 
-	return fmt.Sprintf("Node{\n\tKey: %x\n\tValue: %x\n\tVersion: %d\n\tHeight: %d\n\tSize: %d\n\tLeftHash: %X\n\tRightHash: %X\n\tHash: %s\n}",
+	leftNodeHash := "<no hash>"
+	if node.leftNode != nil && len(node.leftNode.hash) > 0 {
+		leftNodeHash = fmt.Sprintf("%X", node.leftNode.hash)
+	}
+
+	rightNodeHash := "<no hash>"
+	if node.rightNode != nil && len(node.rightNode.hash) > 0 {
+		rightNodeHash = fmt.Sprintf("%X", node.rightNode.hash)
+	}
+
+	return fmt.Sprintf("Node{\n\tKey: %x\n\tValue: %x\n\tVersion: %d\n\tHeight: %d\n\tSize: %d\n\tLeftHash: %s\n\tRightHash: %s\n\tHash: %s\n}",
 		node.key,
 		node.value,
 		node.nodeKey.version,
 		node.subtreeHeight,
 		node.size,
-		node.leftNode.hash,
-		node.rightNode.hash,
+		leftNodeHash,
+		rightNodeHash,
 		hashstr,
 	)
 }
