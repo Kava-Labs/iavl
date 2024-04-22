@@ -267,6 +267,26 @@ func (nk *NodeKey) String() string {
 	return fmt.Sprintf("(%d, %d)", nk.version, nk.nonce)
 }
 
+// FullString returns a string that displays the full contents of the Node in
+// a pretty struct form
+func (node *Node) FullString() string {
+	hashstr := "<no hash>"
+	if len(node.hash) > 0 {
+		hashstr = fmt.Sprintf("%X", node.hash)
+	}
+
+	return fmt.Sprintf("Node{\n\tKey: %x\n\tValue: %x\n\tVersion: %d\n\tHeight: %d\n\tSize: %d\n\tLeftHash: %X\n\tRightHash: %X\n\tHash: %s\n}",
+		node.key,
+		node.value,
+		node.nodeKey.version,
+		node.subtreeHeight,
+		node.size,
+		node.leftNode.hash,
+		node.rightNode.hash,
+		hashstr,
+	)
+}
+
 // String returns a string representation of the node.
 func (node *Node) String() string {
 	child := ""
@@ -345,6 +365,39 @@ func (node *Node) has(t *ImmutableTree, key []byte) (has bool, err error) {
 	}
 
 	return rightNode.has(t, key)
+}
+
+// Get a key under the node.
+//
+// The index is the index in the list of leaf nodes sorted lexicographically by key. The leftmost leaf has index 0.
+// It's neighbor has index 1 and so on.
+func (node *Node) getNode(t *ImmutableTree, key []byte) (target *Node, err error) {
+	if node.isLeaf() {
+		switch bytes.Compare(node.key, key) {
+		case -1:
+			return nil, nil
+		case 1:
+			return nil, nil
+		default:
+			return node, nil
+		}
+	}
+
+	if bytes.Compare(key, node.key) < 0 {
+		leftNode, err := node.getLeftNode(t)
+		if err != nil {
+			return nil, err
+		}
+
+		return leftNode.getNode(t, key)
+	}
+
+	rightNode, err := node.getRightNode(t)
+	if err != nil {
+		return nil, err
+	}
+
+	return rightNode.getNode(t, key)
 }
 
 // Get a key under the node.

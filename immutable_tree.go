@@ -172,6 +172,13 @@ func (t *ImmutableTree) GetWithIndex(key []byte) (int64, []byte, error) {
 	return t.root.get(t, key)
 }
 
+func (t *ImmutableTree) GetNode(key []byte) (*Node, error) {
+	if t.root == nil {
+		return nil, nil
+	}
+	return t.root.getNode(t, key)
+}
+
 // Get returns the value of the specified key if it exists, or nil.
 // The returned value must not be modified, since it may point to data stored within IAVL.
 // Get potentially employs a more performant strategy than GetWithIndex for retrieving the value.
