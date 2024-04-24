@@ -766,7 +766,7 @@ func (tree *MutableTree) SaveVersion() ([]byte, int64, error) {
 				}
 			}
 		} else {
-			if err := tree.saveNewNodes(version); err != nil {
+			if err := tree.saveNewNodes(); err != nil {
 				return nil, 0, err
 			}
 		}
@@ -1026,7 +1026,7 @@ func (tree *MutableTree) balance(node *Node) (newSelf *Node, err error) {
 // saveNewNodes save new created nodes by the changes of the working tree.
 // NOTE: This function clears leftNode/rigthNode recursively and
 // calls _hash() on the given node.
-func (tree *MutableTree) saveNewNodes(version int64) error {
+func (tree *MutableTree) saveNewNodes() error {
 	nonce := uint32(0)
 	newNodes := make([]*Node, 0)
 	var recursiveAssignKey func(*Node) ([]byte, error)
@@ -1039,7 +1039,9 @@ func (tree *MutableTree) saveNewNodes(version int64) error {
 		}
 		nonce++
 		node.nodeKey = &NodeKey{
-			version: version,
+			// Use the legacy version number for the first version, instead of
+			// initialVersion, to ensure that the first version is always 1.
+			version: tree.version + 1,
 			nonce:   nonce,
 		}
 
@@ -1056,7 +1058,9 @@ func (tree *MutableTree) saveNewNodes(version int64) error {
 			}
 		}
 
-		node._hash(version)
+		// Use legacy version number to preserve hash compatibility with old
+		// versions.
+		node._hash(tree.version + 1)
 		newNodes = append(newNodes, node)
 
 		return node.nodeKey.GetKey(), nil

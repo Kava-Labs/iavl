@@ -1420,7 +1420,7 @@ func TestMutableTree_InitialVersion_FirstVersion(t *testing.T) {
 	db := db.NewMemDB()
 
 	initialVersion := int64(1000)
-	tree := NewMutableTree(db, 0, true, log.NewNopLogger(), InitialVersionOption(uint64(initialVersion)))
+	tree := NewMutableTree(db, 0, false, log.NewNopLogger(), InitialVersionOption(uint64(initialVersion)))
 
 	_, err := tree.Set([]byte("hello"), []byte("world"))
 	require.NoError(t, err)
@@ -1428,21 +1428,36 @@ func TestMutableTree_InitialVersion_FirstVersion(t *testing.T) {
 	_, version, err := tree.SaveVersion()
 	require.NoError(t, err)
 	require.Equal(t, initialVersion, version)
-	rootKey := GetRootKey(version)
+
 	// the nodes created at the first version are not assigned with the `InitialVersion`
+	rootKey := GetRootKey(1)
 	node, err := tree.ndb.GetNode(rootKey)
 	require.NoError(t, err)
-	require.Equal(t, initialVersion, node.nodeKey.version)
+	require.Equal(t, int64(1), node.nodeKey.version, "new nodes on new tree should be version 1")
+
+	// Check fast node version
+	fastNode, err := tree.ndb.GetFastNode([]byte("hello"))
+	require.NoError(t, err)
+	require.Equal(t, int64(1), fastNode.GetVersionLastUpdatedAt(), "fast nodes be version 1")
+
+	// ------------------------------
+	// Writes on existing tree
 
 	_, err = tree.Set([]byte("hello"), []byte("world1"))
 	require.NoError(t, err)
 
 	_, version, err = tree.SaveVersion()
 	require.NoError(t, err)
-	require.Equal(t, initialVersion+1, version)
+	require.Equal(t, initialVersion+1, version, "new version should be initialVersion+1")
+
 	rootKey = GetRootKey(version)
 	// the following versions behaves normally
 	node, err = tree.ndb.GetNode(rootKey)
 	require.NoError(t, err)
-	require.Equal(t, initialVersion+1, node.nodeKey.version)
+	require.Equal(t, initialVersion+1, node.nodeKey.version, "new nodes on existing tree should use initialVersion")
+
+	// Check fast node version
+	fastNode, err = tree.ndb.GetFastNode([]byte("hello"))
+	require.NoError(t, err)
+	require.Equal(t, initialVersion+1, fastNode.GetVersionLastUpdatedAt(), "fast nodes should have the same version as the tree")
 }
