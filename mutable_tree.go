@@ -705,6 +705,8 @@ func (tree *MutableTree) SaveVersion() ([]byte, int64, error) {
 	version := tree.WorkingVersion()
 
 	if tree.VersionExists(version) {
+		tree.logger.Info("Attempting to overwrite existing version", "version", version)
+
 		// If the version already exists, return an error as we're attempting to overwrite.
 		// However, the same hash means idempotent (i.e. no-op).
 		existingNodeKey, err := tree.ndb.GetRoot(version)
@@ -732,21 +734,25 @@ func (tree *MutableTree) SaveVersion() ([]byte, int64, error) {
 		return nil, version, fmt.Errorf("version %d was already saved to different hash from %X (existing nodeKey %d)", version, newHash, existingNodeKey)
 	}
 
-	tree.logger.Debug("SAVE TREE", "version", version)
+	tree.logger.Info("SAVE TREE", "version", version)
 
 	// save new fast nodes
 	if !tree.skipFastStorageUpgrade {
+		tree.logger.Info("saving fast node")
+
 		if err := tree.saveFastNodeVersion(version); err != nil {
 			return nil, version, err
 		}
 	}
 	// save new nodes
 	if tree.root == nil {
+		tree.logger.Info("saving new nodes, tree root is nil")
 		if err := tree.ndb.SaveEmptyRoot(version); err != nil {
 			return nil, 0, err
 		}
 	} else {
 		if tree.root.nodeKey != nil {
+			tree.logger.Info("tree.root.nodeKey != nil")
 			// it means there are no updated nodes
 			if err := tree.ndb.SaveRoot(version, tree.root.nodeKey); err != nil {
 				return nil, 0, err
@@ -761,6 +767,7 @@ func (tree *MutableTree) SaveVersion() ([]byte, int64, error) {
 				}
 			}
 		} else {
+			tree.logger.Info("CALLING saveNewNodes()")
 			if err := tree.saveNewNodes(); err != nil {
 				return nil, 0, err
 			}
@@ -1046,6 +1053,7 @@ func (tree *MutableTree) saveNewNodes() error {
 
 		// Use legacy version number to preserve hash compatibility with old
 		// versions.
+		tree.logger.Info("saveNewNodes hashing", "root node key", tree.root.nodeKey.String(), "version", tree.version+1)
 		node._hash(tree.version + 1)
 		newNodes = append(newNodes, node)
 
