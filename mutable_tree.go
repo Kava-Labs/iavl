@@ -704,6 +704,12 @@ func (tree *MutableTree) UnsetCommitting() {
 func (tree *MutableTree) SaveVersion() ([]byte, int64, error) {
 	version := tree.WorkingVersion()
 
+	if tree.root != nil && tree.root.key != nil {
+		tree.logger.Info("SaveVersion", "key name", string(tree.root.key))
+	} else {
+		tree.logger.Info("SaveVersion with nil tree.root.key?")
+	}
+
 	if tree.VersionExists(version) {
 		tree.logger.Info("Attempting to overwrite existing version", "version", version)
 
@@ -773,6 +779,8 @@ func (tree *MutableTree) SaveVersion() ([]byte, int64, error) {
 			}
 		}
 	}
+
+	tree.logger.Info("committing nodes", "tree version", tree.version)
 
 	if err := tree.ndb.Commit(); err != nil {
 		return nil, version, err
@@ -1053,7 +1061,6 @@ func (tree *MutableTree) saveNewNodes() error {
 
 		// Use legacy version number to preserve hash compatibility with old
 		// versions.
-		tree.logger.Info("saveNewNodes hashing", "root node key", tree.root.nodeKey.String(), "version", tree.version+1)
 		node._hash(tree.version + 1)
 		newNodes = append(newNodes, node)
 
