@@ -138,6 +138,33 @@ func TestDelete(t *testing.T) {
 	require.Equal(t, 0, bytes.Compare([]byte("Fred"), proof.GetExist().Value))
 }
 
+func TestDeleteVersionsFrom(t *testing.T) {
+	tree := setupMutableTree(t, false)
+
+	_, _, err := tree.set([]byte("k1"), []byte("Wilma"))
+	require.NoError(t, err)
+	_, version, err := tree.SaveVersion()
+	require.NoError(t, err)
+	_, _, err = tree.SaveVersion()
+	require.NoError(t, err)
+	_, _, err = tree.SaveVersion()
+	require.NoError(t, err)
+
+	require.NoError(t, tree.DeleteVersionsFrom(version+1))
+
+	proof, err := tree.GetVersionedProof([]byte("k1"), version)
+	require.Nil(t, err)
+	require.Equal(t, 0, bytes.Compare([]byte("Wilma"), proof.GetExist().Value))
+
+	proof, err = tree.GetVersionedProof([]byte("k1"), version+1)
+	require.EqualError(t, err, ErrVersionDoesNotExist.Error())
+	require.Nil(t, proof)
+
+	proof, err = tree.GetVersionedProof([]byte("k1"), version+2)
+	require.EqualError(t, err, ErrVersionDoesNotExist.Error())
+	require.Nil(t, proof)
+}
+
 func TestGetRemove(t *testing.T) {
 	require := require.New(t)
 	tree := setupMutableTree(t, false)
