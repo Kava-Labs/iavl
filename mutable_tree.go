@@ -1122,7 +1122,7 @@ func (tree *MutableTree) DeleteVersion(version int64) error {
 	return nil
 }
 
-// DeleteVersionsFrom removes from the given version upwards from the MutableTree.
+// DeleteVersionsFrom removes from the given version upwards (inclusive) from the MutableTree.
 // It will not block the SaveVersion() call, instead it will be queued and executed deferred.
 func (tree *MutableTree) DeleteVersionsFrom(fromVersion int64) error {
 	if err := tree.ndb.DeleteVersionsFrom(fromVersion); err != nil {
