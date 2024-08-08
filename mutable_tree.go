@@ -142,9 +142,11 @@ func (tree *MutableTree) WorkingHash() []byte {
 
 func (tree *MutableTree) WorkingVersion() int64 {
 	version := tree.version + 1
+	override := (version == 1 && tree.ndb.opts.InitialVersion > 0)
 	if version == 1 && tree.ndb.opts.InitialVersion > 0 {
 		version = int64(tree.ndb.opts.InitialVersion)
 	}
+	fmt.Printf("working version = %d (overridden=%t)\n", version, override)
 	return version
 }
 
@@ -703,6 +705,17 @@ func (tree *MutableTree) UnsetCommitting() {
 // the tree. Returns the hash and new version number.
 func (tree *MutableTree) SaveVersion() ([]byte, int64, error) {
 	version := tree.WorkingVersion()
+
+	exists := tree.VersionExists(version)
+	fmt.Printf("SaveVersion(): exists=%t, tree.version=%d, ndp.opts.InitialVersion=%d\n",
+		exists, tree.version, tree.ndb.opts.InitialVersion,
+	)
+	if tree.root != nil {
+		fmt.Printf("  root: key=%s\n", string(tree.root.key))
+		fmt.Printf("  isLegacy=%t; %s", tree.root.isLegacy, tree.root.String())
+	} else {
+		fmt.Println("  no root")
+	}
 
 	if tree.VersionExists(version) {
 		// If the version already exists, return an error as we're attempting to overwrite.
