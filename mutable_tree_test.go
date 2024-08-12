@@ -1447,16 +1447,91 @@ func TestMutableTree_InitialVersion_FirstVersion(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, initialVersion, version)
 
-	// the nodes created at the first version are not assigned with the `InitialVersion`
-	rootKey := GetRootKey(1)
-	node, err := tree.ndb.GetNode(rootKey)
+	err = tree.ndb.batch.WriteSync()
 	require.NoError(t, err)
-	require.Equal(t, int64(1), node.nodeKey.version, "new nodes on new tree should be version 1")
 
-	// Check fast node version
-	fastNode, err := tree.ndb.GetFastNode([]byte("hello"))
+	// Save 2 empty versions after the initial version, should produce 2 refnodes
+	_, _, err = tree.SaveVersion()
 	require.NoError(t, err)
-	require.Equal(t, int64(1), fastNode.GetVersionLastUpdatedAt(), "fast nodes be version 1")
+
+	_, _, err = tree.SaveVersion()
+	require.NoError(t, err)
+
+	// ------------------------------
+	// Verify
+	// 1. Node exists with Version 1, not InitialVersion
+	// 2. VersionExists(InitialVersion) - should return true
+	// 3. AvailableVersions() - should include InitialVersion and NOT version 1
+	// 4. ndb.GetRoot(InitialVersion) - should return the root node
+	// 5. GetImmutable(InitialVersion) - should return the immutable tree
+	// 6. LoadVersion(InitialVersion) - loads tree even if node contains version 1. This is last since it runs some previous methods internally
+
+	// the nodes created at the first version are not assigned with the `InitialVersion`
+	t.Run("1. node exists with root key version 1", func(t *testing.T) {
+		rootKey := GetRootKey(1)
+		node, err := tree.ndb.GetNode(rootKey)
+		require.NoError(t, err)
+		require.Equal(t, int64(1), node.nodeKey.version, "new nodes on new tree should be version 1")
+
+		// Check fast node version
+		fastNode, err := tree.ndb.GetFastNode([]byte("hello"))
+		require.NoError(t, err)
+		require.Equal(t, int64(1), fastNode.GetVersionLastUpdatedAt(), "fast nodes be version 1")
+	})
+
+	t.Run("2. VersionExists(InitialVersion)", func(t *testing.T) {
+		hasVersion := tree.VersionExists(initialVersion)
+		require.True(t, hasVersion, "initial version should still be found")
+	})
+
+	t.Run("3. AvailableVersions()", func(t *testing.T) {
+		versions := tree.AvailableVersions()
+		require.Contains(t, versions, int(initialVersion), "initial version should be found")
+		require.NotContains(t, versions, int64(1), "version 1 should not be found")
+	})
+
+	t.Run("4. GetRoot(InitialVersion)", func(t *testing.T) {
+		root, err := tree.ndb.GetRoot(initialVersion)
+
+		// Internally, this should use a refnode
+		require.NoError(t, err)
+		require.NotNil(t, root, "root node should be found at initial version")
+	})
+
+	t.Run("5. GetImmutable(InitialVersion)", func(t *testing.T) {
+		immutableTree, err := tree.GetImmutable(initialVersion)
+		require.NoError(t, err)
+		require.NotNil(t, immutableTree, "immutable tree should be found at initial version")
+	})
+
+	t.Run("6. LoadVersion(InitialVersion)", func(t *testing.T) {
+		// Final check - runs previous methods internally as well
+		_, err = tree.LoadVersion(initialVersion)
+		require.NoError(t, err)
+	})
+
+	// Internal ndb methods for good measure
+	firstVersion, err := tree.ndb.getFirstVersion()
+	require.NoError(t, err)
+	require.Equal(t, initialVersion, firstVersion, "first version should be the initialVersion")
+
+	latest, err := tree.ndb.getLatestVersion()
+	require.NoError(t, err)
+	require.Equal(t, initialVersion, latest, "first version should be the initialVersion")
+
+	// Check reference nodes point at the correct node key
+	err = tree.ndb.traversePrefix(nodeKeyFormat.Prefix(), func(key, value []byte) error {
+		if isRef, _ := isReferenceRoot(value); isRef {
+			nk := GetNodeKey(value[1:])
+			val, err := tree.ndb.db.Get(nk.GetKey())
+
+			require.NoError(t, err)
+			require.NotNil(t, val, "reference node should point to a valid node")
+		}
+
+		return nil
+	})
+	require.NoError(t, err)
 
 	// ------------------------------
 	// Writes on existing tree
@@ -1468,16 +1543,20 @@ func TestMutableTree_InitialVersion_FirstVersion(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, initialVersion+1, version, "new version should be initialVersion+1")
 
-	rootKey = GetRootKey(version)
+	rootKey := GetRootKey(version)
 	// the following versions behaves normally
-	node, err = tree.ndb.GetNode(rootKey)
+	node, err := tree.ndb.GetNode(rootKey)
 	require.NoError(t, err)
 	require.Equal(t, initialVersion+1, node.nodeKey.version, "new nodes on existing tree should use initialVersion")
 
 	// Check fast node version
-	fastNode, err = tree.ndb.GetFastNode([]byte("hello"))
+	fastNode, err := tree.ndb.GetFastNode([]byte("hello"))
 	require.NoError(t, err)
-	require.Equal(t, initialVersion+1, fastNode.GetVersionLastUpdatedAt(), "fast nodes should have the same version as the tree")
+	require.Equal(
+		t, initialVersion+1,
+		fastNode.GetVersionLastUpdatedAt(),
+		"fast nodes should have the same version as the tree",
+	)
 }
 
 func TestMutableTreeClose(t *testing.T) {
