@@ -746,6 +746,7 @@ func (tree *MutableTree) SaveVersion() ([]byte, int64, error) {
 			return nil, 0, err
 		}
 	} else {
+		// nodeKey already set, no changes to tree
 		if tree.root.nodeKey != nil {
 			// it means there are no updated nodes
 			if err := tree.ndb.SaveRoot(version, tree.root.nodeKey); err != nil {
@@ -761,9 +762,22 @@ func (tree *MutableTree) SaveVersion() ([]byte, int64, error) {
 				}
 			}
 		} else {
+			// No nodeKey, assign new nodeKeys and save nodes. This happens when
+			// any node in the tree has been updated as setting a key will
+			// reset all nodeKeys to nil
 			if err := tree.saveNewNodes(); err != nil {
 				return nil, 0, err
 			}
+		}
+	}
+
+	// PATCH for backwards compatibility:
+	// On InitialVersion, this is a new tree.
+	// Add a reference node from InitialVersion -> 1 (root node)
+	// Note: Node version != nodekey.Version due to patch
+	if tree.ndb.opts.InitialVersion > 0 && version == int64(tree.ndb.opts.InitialVersion) {
+		if err := tree.ndb.SaveRoot(version, tree.root.nodeKey); err != nil {
+			return nil, 0, err
 		}
 	}
 
