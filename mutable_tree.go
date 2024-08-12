@@ -137,7 +137,9 @@ func (tree *MutableTree) Hash() []byte {
 
 // WorkingHash returns the hash of the current working tree.
 func (tree *MutableTree) WorkingHash() []byte {
-	return tree.root.hashWithCount(tree.WorkingVersion())
+	// Use tree.version instead of tree.WorkingVersion() because tree.version
+	// is always the latest version
+	return tree.root.hashWithCount(tree.version + 1)
 }
 
 func (tree *MutableTree) WorkingVersion() int64 {
