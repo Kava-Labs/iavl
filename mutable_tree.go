@@ -771,18 +771,18 @@ func (tree *MutableTree) SaveVersion() ([]byte, int64, error) {
 				return nil, 0, err
 			}
 		}
-	}
 
-	// Addition to node version patch for backwards compatibility:
-	// This is to resolve queries at InitialVersion, loading the tree at
-	// InitialVersion when the root node has version 1.
-	// Note: version != nodekey.Version due to patch.
-	if tree.ndb.opts.InitialVersion > 0 && version == int64(tree.ndb.opts.InitialVersion) {
-		// SaveRoot is meant for saving a tree when there are no updates, which
-		// simply creates a reference node to the root node. We reuse this to
-		// create a reference node from InitialVersion -> 1 (root node).
-		if err := tree.ndb.SaveRoot(version, tree.root.nodeKey); err != nil {
-			return nil, 0, err
+		// Addition to node version patch for backwards compatibility:
+		// This is to resolve queries at InitialVersion, loading the tree at
+		// InitialVersion when the root node has version 1.
+		// Note: version != nodekey.Version due to patch.
+		if tree.ndb.opts.InitialVersion > 0 && version == int64(tree.ndb.opts.InitialVersion) {
+			// SaveRoot is meant for saving a tree when there are no updates, which
+			// simply creates a reference node to the root node. We reuse this to
+			// create a reference node from InitialVersion -> 1 (root node).
+			if err := tree.ndb.SaveRoot(version, tree.root.nodeKey); err != nil {
+				return nil, 0, err
+			}
 		}
 	}
 
