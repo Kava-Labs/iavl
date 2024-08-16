@@ -1540,8 +1540,7 @@ func TestMutableTree_InitialVersion_FirstVersion(t *testing.T) {
 
 	// Internal ndb methods for good measure
 
-	// TODO: AUDIT - use of ndb.hasVersion()
-	// Node has version 1, but it should only be found via InitialVersion
+	// Node has version 1, but it should only be found via reference nodes
 	hasVersion1, err := tree.ndb.hasVersion(1)
 	require.NoError(t, err)
 	require.False(t, hasVersion1, "version 1 should not be found")
