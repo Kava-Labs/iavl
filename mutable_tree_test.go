@@ -1687,6 +1687,8 @@ func TestMutableTree_InitialVersion_Prune(t *testing.T) {
 func TestMutableTree_InitialVersion_NodeDB_Version(t *testing.T) {
 	testInitialVersions := []int64{1, 2, 3, 4, 5, 6, 7, 8, 9, 10}
 
+	var expTreeHash []byte
+
 	for _, initialVersion := range testInitialVersions {
 		t.Run(fmt.Sprintf("InitialVersion(%d)", initialVersion), func(t *testing.T) {
 			db := dbm.NewMemDB()
@@ -1696,9 +1698,18 @@ func TestMutableTree_InitialVersion_NodeDB_Version(t *testing.T) {
 			_, err := tree.Set([]byte("hello"), []byte("world"))
 			require.NoError(t, err)
 
-			_, version, err := tree.SaveVersion()
+			treeHash, version, err := tree.SaveVersion()
 			require.NoError(t, err)
 			require.Equal(t, initialVersion, version)
+
+			if expTreeHash == nil {
+				expTreeHash = treeHash
+			} else {
+				require.NotEmpty(t, expTreeHash, "expected tree hash should not be empty")
+				require.Equal(t, expTreeHash, treeHash, "tree hash should be the same")
+			}
+
+			t.Logf("treeHash: %X", treeHash)
 
 			// ------------------------------
 			// Verify
@@ -1732,4 +1743,22 @@ func TestMutableTree_InitialVersion_NodeDB_Version(t *testing.T) {
 			require.ErrorIs(t, err, ErrVersionDoesNotExist)
 		})
 	}
+
+	t.Run("No InitialVersion", func(t *testing.T) {
+		// Starts at 1, same as InitialVersion(1)
+		// This goes through the non-patched path
+
+		db := dbm.NewMemDB()
+		tree := NewMutableTree(db, 0, false, log.NewNopLogger())
+
+		_, err := tree.Set([]byte("hello"), []byte("world"))
+		require.NoError(t, err)
+
+		treeHash, version, err := tree.SaveVersion()
+		require.NoError(t, err)
+		require.Equal(t, int64(1), version)
+
+		require.NotEmpty(t, expTreeHash, "expected tree hash should not be empty, should have been set in previous test")
+		require.Equal(t, expTreeHash, treeHash, "tree hash should be the same")
+	})
 }
