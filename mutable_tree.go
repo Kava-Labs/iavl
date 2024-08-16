@@ -787,23 +787,6 @@ func (tree *MutableTree) SaveVersion() ([]byte, int64, error) {
 			if err := tree.ndb.SaveRoot(version, tree.root.nodeKey); err != nil {
 				return nil, 0, err
 			}
-
-			// Delete the root node to be replaced below with new key. Need to
-			// delete this otherwise there will be two keys (version, 1) and
-			// (version, 0) below pointing at the same node.
-			if err := tree.ndb.deleteFromPruning(tree.ndb.nodeKey(tree.root.nodeKey.GetKey())); err != nil {
-				return nil, 0, err
-			}
-
-			// Use a nonce of 0 to match pruning behavior that hides it from
-			// the version list.
-			// Mark the root node as hidden, same as how pruning handles.
-			// Even if with the reference node via SaveRoot() above points at
-			// (version, 1), LoadVersion still checks (version, 0) if it exists.
-			tree.root.nodeKey.nonce = 0
-			if err := tree.ndb.SaveNode(tree.root); err != nil {
-				return nil, 0, err
-			}
 		}
 	}
 
@@ -1068,6 +1051,9 @@ func (tree *MutableTree) balance(node *Node) (newSelf *Node, err error) {
 func (tree *MutableTree) saveNewNodes() error {
 	nonce := uint32(0)
 	newNodes := make([]*Node, 0)
+
+	isInitialVersion := tree.ndb.opts.InitialVersion > 1 && tree.WorkingVersion() == int64(tree.ndb.opts.InitialVersion)
+
 	var recursiveAssignKey func(*Node) ([]byte, error)
 	recursiveAssignKey = func(node *Node) ([]byte, error) {
 		if node.nodeKey != nil {
@@ -1079,6 +1065,12 @@ func (tree *MutableTree) saveNewNodes() error {
 			// initialVersion, to ensure that the first version is always 1.
 			version: tree.version + 1,
 			nonce:   nonce,
+		}
+
+		// Save the root node at InitialVersion to nonce of 0 to hide it from
+		// the version list.
+		if isInitialVersion && nonce == 1 {
+			node.nodeKey.nonce = 0
 		}
 
 		var err error
