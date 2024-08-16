@@ -773,33 +773,29 @@ func (tree *MutableTree) SaveVersion() ([]byte, int64, error) {
 		}
 
 		// Addition to node version patch for backwards compatibility:
-		// This is to resolve queries at InitialVersion, loading the tree at
-		// InitialVersion when the root node has version 1. Must not be done
-		// when InitialVersion is 1 as it will write an unnecessary reference
-		// that overwrites the actual root node.
-		// Note: version != nodekey.Version due to patch.
+		// This is to resolve queries at InitialVersion AND at version 1.
+		// Only applies when InitialVersion > 1 and on the first save.
+		// The root node on a new tree is always at version 1 to maintain app
+		// hash backwards compatibility:
+		// InitialVersion != nodekey.Version
 		if tree.ndb.opts.InitialVersion > 1 && version == int64(tree.ndb.opts.InitialVersion) {
 			// SaveRoot is meant for saving a tree when there are no updates, which
 			// simply creates a reference node to the root node. We reuse this to
-			// create a reference node from InitialVersion -> 1 (root node).
-
-			// Save reference node from InitialVersion -> tree.root
+			// create a reference node at InitialVersion with value of the root
+			// node at (1, 1).
 			if err := tree.ndb.SaveRoot(version, tree.root.nodeKey); err != nil {
 				return nil, 0, err
 			}
 
-			// Delete the root node to be replaced below with new key. Need to
-			// delete this otherwise there will be two keys (version, 1) and
-			// (version, 0) below pointing at the same node.
+			// Delete the root node at (1, 1) to be re-saved at (1, 0) below.
 			if err := tree.ndb.deleteFromPruning(tree.ndb.nodeKey(tree.root.nodeKey.GetKey())); err != nil {
 				return nil, 0, err
 			}
 
 			// Use a nonce of 0 to match pruning behavior that hides it from
 			// the version list.
-			// Mark the root node as hidden, same as how pruning handles.
-			// Even if with the reference node via SaveRoot() above points at
-			// (version, 1), LoadVersion still checks (version, 0) if it exists.
+			// ndb.GetRoot will check for (version, 0) if (version, 1) does not
+			// exist.
 			tree.root.nodeKey.nonce = 0
 			if err := tree.ndb.SaveNode(tree.root); err != nil {
 				return nil, 0, err
