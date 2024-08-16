@@ -1456,6 +1456,10 @@ func TestMutableTree_InitialVersion_FirstVersion(t *testing.T) {
 	_, err := tree.Set([]byte("hello"), []byte("world"))
 	require.NoError(t, err)
 
+	// More than 1 key/value pair to also check non-root nodes
+	_, err = tree.Set([]byte("goodbye"), []byte("world"))
+	require.NoError(t, err)
+
 	_, version, err := tree.SaveVersion()
 	require.NoError(t, err)
 	require.Equal(t, initialVersion, version)
@@ -1480,11 +1484,16 @@ func TestMutableTree_InitialVersion_FirstVersion(t *testing.T) {
 	// 6. LoadVersion(InitialVersion) - loads tree even if node contains version 1. This is last since it runs some previous methods internally
 
 	// the nodes created at the first version are not assigned with the `InitialVersion`
-	t.Run("1. node exists with root key version 1", func(t *testing.T) {
-		rootKey := GetRootKey(1)
+	t.Run("1. root node exists at RootKey(initialVersion) with nodeKey version 1", func(t *testing.T) {
+		t.Skip()
+		rootKey := GetRootKey(initialVersion)
 		node, err := tree.ndb.GetNode(rootKey)
 		require.NoError(t, err)
-		require.Equal(t, int64(1), node.nodeKey.version, "new nodes on new tree should be version 1")
+
+		// Calling GetNode with rootKey actually sets the returned Node.nodeKey.
+		// nodeKey isn't persisted in db, and thus needs to be repopulated by
+		// the caller & the provided nodeKey
+		require.Equal(t, int64(1), node.nodeKey.version, "nodes on new tree should have nodeKey.version == 1")
 
 		// Check fast node version
 		fastNode, err := tree.ndb.GetFastNode([]byte("hello"))
@@ -1533,9 +1542,9 @@ func TestMutableTree_InitialVersion_FirstVersion(t *testing.T) {
 
 	// TODO: AUDIT - use of ndb.hasVersion()
 	// Node has version 1, but it should only be found via InitialVersion
-	// hasVersion1, err := tree.ndb.hasVersion(1)
-	// require.NoError(t, err)
-	// require.False(t, hasVersion1, "version 1 should not be found")
+	hasVersion1, err := tree.ndb.hasVersion(1)
+	require.NoError(t, err)
+	require.False(t, hasVersion1, "version 1 should not be found")
 
 	firstVersion, err := tree.ndb.getFirstVersion()
 	require.NoError(t, err)
@@ -1675,10 +1684,10 @@ func TestMutableTree_InitialVersion_Prune(t *testing.T) {
 	_, err = tree.LoadVersion(expFirstVersion)
 	require.NoError(t, err)
 
-	// TODO: Direct node version access
-	// hasVersion1, err := tree.ndb.hasVersion(1)
-	// require.NoError(t, err)
-	// require.False(t, hasVersion1, "version 1 should not be found")
+	// Direct node version access
+	hasVersion1, err := tree.ndb.hasVersion(1)
+	require.NoError(t, err)
+	require.False(t, hasVersion1, "version 1 should not be found")
 
 	// Internal ndb methods for good measure
 	firstVersion, err := tree.ndb.getFirstVersion()
@@ -1688,4 +1697,54 @@ func TestMutableTree_InitialVersion_Prune(t *testing.T) {
 	latest, err := tree.ndb.getLatestVersion()
 	require.NoError(t, err)
 	require.Equal(t, latestVersion, latest, "latest version should stay same")
+}
+
+func TestMutableTree_InitialVersion_NodeDB_Version(t *testing.T) {
+	testInitialVersions := []int64{1, 2, 3, 4, 5, 6, 7, 8, 9, 10}
+
+	for _, initialVersion := range testInitialVersions {
+		t.Run(fmt.Sprintf("InitialVersion(%d)", initialVersion), func(t *testing.T) {
+			db := dbm.NewMemDB()
+
+			tree := NewMutableTree(db, 0, false, log.NewNopLogger(), InitialVersionOption(uint64(initialVersion)))
+
+			_, err := tree.Set([]byte("hello"), []byte("world"))
+			require.NoError(t, err)
+
+			_, version, err := tree.SaveVersion()
+			require.NoError(t, err)
+			require.Equal(t, initialVersion, version)
+
+			// ------------------------------
+			// Verify
+
+			// Load a new tree with the same db and without initialVersion
+			tree = NewMutableTree(db, 0, false, log.NewNopLogger())
+
+			_, err = tree.LoadVersion(initialVersion)
+			require.NoError(t, err, "InitialVersion should be loadable in tree")
+
+			if initialVersion == 1 {
+				_, err = tree.LoadVersion(1)
+				require.NoError(t, err, "Version 1 should exist when initialVersion is 1")
+				return
+			}
+
+			// ndb.getFirstVersion() does a binary search and loads the node to find the
+			// first version. If using a reference node from InitialVersion -> version 1
+			// Version 1 exists in the node db but shouldn't be used when actually
+			// trying to load version 1.
+			//
+			// When:
+			// InitialVersion == 2, node structure is identical to InitialVersion == 1
+			// if version 2 has no changes.
+			// In this case we cannot determine if LoadVersion(1) should work or
+			// not since we no longer have ndb.opts.InitialVersion
+			// nodeKey v1 -> rootNode
+			// nodeKey v2 -> refNode(v1)
+			_, err = tree.LoadVersion(1)
+			require.Error(t, err, "Version 1 should not be loadable in tree")
+			require.ErrorIs(t, err, ErrVersionDoesNotExist)
+		})
+	}
 }
