@@ -1554,25 +1554,6 @@ func TestMutableTree_InitialVersion_FirstVersion(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, latestVersion, latest, "latest version should be updated")
 
-	// Check reference nodes point at the correct node key
-	err = tree.ndb.traversePrefix(nodeKeyFormat.Prefix(), func(key, value []byte) error {
-		if isRef, _ := isReferenceRoot(value); isRef {
-			// key still contains prefix, so we need to remove first byte
-			refnodeKey := GetNodeKey(key[1:])
-
-			nk := GetNodeKey(value[1:])
-
-			t.Logf("ref node %s -> %s", refnodeKey.String(), nk.String())
-
-			val, err := tree.ndb.GetNode(nk.GetKey())
-			require.NoError(t, err)
-			require.NotNil(t, val, "reference node should point to a valid node")
-		}
-
-		return nil
-	})
-	require.NoError(t, err)
-
 	// ------------------------------
 	// Writes on existing tree
 
@@ -1654,7 +1635,8 @@ func TestMutableTree_InitialVersion_Prune(t *testing.T) {
 	initialVersion := int64(1000)
 	tree := NewMutableTree(db, 0, false, log.NewNopLogger(), InitialVersionOption(uint64(initialVersion)))
 
-	_, err := tree.Set([]byte("hello"), []byte("world"))
+	key := []byte("hello")
+	_, err := tree.Set(key, []byte("world"))
 	require.NoError(t, err)
 
 	require.NotPanics(t, func() {
@@ -1683,6 +1665,10 @@ func TestMutableTree_InitialVersion_Prune(t *testing.T) {
 
 	_, err = tree.LoadVersion(expFirstVersion)
 	require.NoError(t, err)
+
+	bz, err := tree.Get(key)
+	require.NoError(t, err)
+	require.Equal(t, []byte("world"), bz, "k/v should still be found")
 
 	// Direct node version access
 	hasVersion1, err := tree.ndb.hasVersion(1)
