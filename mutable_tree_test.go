@@ -2,6 +2,7 @@ package iavl
 
 import (
 	"bytes"
+	"encoding/hex"
 	"errors"
 	"fmt"
 	"runtime"
@@ -1768,4 +1769,74 @@ func TestMutableTree_InitialVersion_NodeDB_Version(t *testing.T) {
 		require.NotEmpty(t, expTreeHash, "expected tree hash should not be empty, should have been set in previous test")
 		require.Equal(t, expTreeHash, treeHash, "tree hash should be the same")
 	})
+}
+
+func TestMutableTree_InitialVersion_LoadVersionForOverwriting(t *testing.T) {
+	// This test to ensure that WorkingHash() doesn't affect our InitialVersion
+	// patch. Since we only care about the InitialVersion for this:
+	// The code path to reach a WorkingHash() call is only via
+	// LoadVersionForOverwriting().
+	// However - one possible case is when rolling back before InitialVersion,
+	// the tree isn't actually deleted, e.g. attempting to SaveVersion() on an
+	// existing version.
+
+	db := dbm.NewMemDB()
+
+	initialVersion := int64(1000)
+	tree := NewMutableTree(db, 0, false, log.NewNopLogger(), InitialVersionOption(uint64(initialVersion)))
+
+	key := []byte("hello")
+	_, err := tree.Set(key, []byte("world"))
+	require.NoError(t, err)
+
+	hash1, version1, err := tree.SaveVersion()
+	require.NoError(t, err)
+	require.Equal(t, initialVersion, version1)
+
+	// Save 2 empty versions after the initial version, should produce 2 refnodes
+	_, _, err = tree.SaveVersion()
+	require.NoError(t, err)
+	_, _, err = tree.SaveVersion()
+	require.NoError(t, err)
+
+	err = tree.LoadVersionForOverwriting(initialVersion - 1)
+	require.Error(t, err, "cannot overwrite the initial version")
+
+	// Overwrite initialversion + 1
+	err = tree.LoadVersionForOverwriting(initialVersion)
+	require.NoError(t, err)
+
+	workingVersion := tree.WorkingVersion()
+	require.Equal(t, initialVersion+1, workingVersion, "only can write InitialVersion + 1")
+
+	hash2, version2, err := tree.SaveVersion()
+	require.NoError(t, err)
+
+	// Hashes should match
+	require.Equal(t, initialVersion+1, version2, "version should be the same")
+	require.Equal(
+		t,
+		hex.EncodeToString(hash1),
+		hex.EncodeToString(hash2),
+		"hashes should match",
+	)
+
+	// ------------------------------
+	// Repeat with the same database backend, but new tree.
+	// This replicates the case where a rollback before InitialVersion that does
+	// not delete the tree.
+	// Related:
+	// https://github.com/Kava-Labs/cosmos-sdk/pull/546
+
+	tree = NewMutableTree(db, 0, false, log.NewNopLogger(), InitialVersionOption(uint64(initialVersion)))
+
+	_, err = tree.Set(key, []byte("world"))
+	require.NoError(t, err)
+
+	hash3, version3, err := tree.SaveVersion()
+	require.NoError(t, err)
+	require.Equal(t, initialVersion, version3)
+
+	// Same as if the DB backend was empty
+	require.Equal(t, hex.EncodeToString(hash1), hex.EncodeToString(hash3), "hashes should match the first save")
 }
