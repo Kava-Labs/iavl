@@ -1476,7 +1476,7 @@ func TestMutableTree_InitialVersion_FirstVersion(t *testing.T) {
 
 	// ------------------------------
 	// Verify
-	// 1. Node exists with Version 1, not InitialVersion
+	// 1. Node exists with Version 1 and nonce 0, not InitialVersion
 	// 2. VersionExists(InitialVersion) - should return true
 	// 3. AvailableVersions() - should include InitialVersion and NOT version 1
 	// 4. ndb.GetRoot(InitialVersion) - should return the root node
@@ -1484,10 +1484,17 @@ func TestMutableTree_InitialVersion_FirstVersion(t *testing.T) {
 	// 6. LoadVersion(InitialVersion) - loads tree even if node contains version 1. This is last since it runs some previous methods internally
 
 	// the nodes created at the first version are not assigned with the `InitialVersion`
-	t.Run("1. root node exists at RootKey(initialVersion) with nodeKey version 1", func(t *testing.T) {
-		t.Skip()
-		rootKey := GetRootKey(initialVersion)
-		node, err := tree.ndb.GetNode(rootKey)
+	t.Run("1. root node exists at (1, 0) with nodeKey version 1", func(t *testing.T) {
+		_, err := tree.ndb.GetNode(GetRootKey(initialVersion))
+		require.Error(t, err)
+		require.ErrorContains(t, err, "error reading Node.", "root node at initialVersion should be a reference node")
+
+		_, err = tree.ndb.GetNode(GetRootKey(1))
+		require.Error(t, err)
+		require.ErrorContains(t, err, "Value missing for key", "(1, 1) should not exist")
+
+		rnk := &NodeKey{version: 1, nonce: 0}
+		node, err := tree.ndb.GetNode(rnk.GetKey())
 		require.NoError(t, err)
 
 		// Calling GetNode with rootKey actually sets the returned Node.nodeKey.
